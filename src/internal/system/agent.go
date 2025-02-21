@@ -1,25 +1,17 @@
 package system
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
-// CheckResources verifies if system has enough memory and disk space.
-func CheckResources(requiredMemory int64, requiredDiskSpace int64) bool {
-	totalMem, availableMem := GetMemoryStats()
-	freeDisk := GetDiskStats()
-
-	fmt.Printf("Total Memory: %d bytes, Available: %d bytes\n", totalMem, availableMem)
-	fmt.Printf("Free Disk Space: %d bytes\n", freeDisk)
-
-	if availableMem < uint64(requiredMemory) {
-		fmt.Println("Not enough memory available!")
-		return false
+// StartRentalProcess checks resources and then creates a VM.
+func StartRentalProcess(vmName string, sshKey string, duration time.Duration) error {
+	// Ensure the CheckResources function is implemented
+	if err := CheckResources(); err != nil {
+		return fmt.Errorf("insufficient resources: %v", err)
 	}
 
-	if freeDisk < uint64(requiredDiskSpace) {
-		fmt.Println("Not enough disk space available!")
-		return false
-	}
-
-	fmt.Println("Sufficient resources available. Proceeding with VM creation.")
-	return true
+	// Proceed with VM creation
+	return CreateVM(vmName, sshKey, duration)
 }
