@@ -3,31 +3,37 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"strconv"
+	"time"
 	"vm-agent/internal/system"
 )
 
 func main() {
-	requiredMemory := int64(1024 * 1024 * 1024) // 1GB in bytes
-	requiredDiskSpace := int64(10 * 1024 * 1024 * 1024) // 10GB in bytes
-
-	// Step 1: Check Resources
-	fmt.Println("Checking system resources before VM creation...")
-	if !system.CheckResources(requiredMemory, requiredDiskSpace) {
-		log.Fatal("Insufficient resources. Cannot proceed with VM creation.")
+	if len(os.Args) < 4 {
+		fmt.Println("Usage: main <VM_NAME> <SSH_KEY_PATH> <DURATION_IN_MINUTES>")
+		os.Exit(1)
 	}
 
-	// Step 2: Create VM
-	vmName := "TestVM"
-	fmt.Println("Attempting to create VM...")
-	if err := system.ManageVM(vmName, "create"); err != nil {
-		log.Fatalf("Failed to create VM: %v", err)
+	vmName := os.Args[1]
+	sshKeyPath := os.Args[2]
+	durationMinutes, err := strconv.Atoi(os.Args[3])
+	if err != nil {
+		log.Fatalf("Invalid duration: %v", err)
 	}
-	fmt.Println("VM created successfully!")
 
-	// Step 3: Delete VM
-	fmt.Println("Attempting to delete VM...")
-	if err := system.ManageVM(vmName, "delete"); err != nil {
-		log.Fatalf("Failed to delete VM: %v", err)
+	// Read SSH Key
+	sshKey, err := os.ReadFile(sshKeyPath)
+	if err != nil {
+		log.Fatalf("Failed to read SSH key: %v", err)
 	}
-	fmt.Println("VM deleted successfully!")
+
+	duration := time.Duration(durationMinutes) * time.Minute
+
+	log.Println("Starting rental process...")
+	if err := system.StartRentalProcess(vmName, string(sshKey), duration); err != nil {
+		log.Fatalf("Error starting rental: %v", err)
+	}
+
+	log.Println("VM rental setup complete!")
 }
