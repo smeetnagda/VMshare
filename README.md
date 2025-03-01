@@ -20,4 +20,4 @@ VMShare is a peer-to-peer platform that lets users rent out virtual machines fro
 🔒 Privacy & Security First – User data remains protected.<br>
 
 📌 Status: 🛠️ Under Development <br>
-👥 Contributors Welcome! Feel free to open issues, suggest features, or fork the repo.
+
