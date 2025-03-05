@@ -164,15 +164,8 @@ func InstallGuestAdditions(vmName string) error {
     // **Step 3: Ensure the IDE storage controller exists**
     log.Println("🛠 Checking or creating IDE controller...")
     err := runVBoxCommand("storagectl", vmName, "--name", "IDE", "--add", "ide")
-    if err != nil && strings.Contains(err.Error(), "already locked for a session") {
-        log.Println("⚠️ VM is locked. Retrying after forced power off...")
-        _ = exec.Command("VBoxManage", "controlvm", vmName, "poweroff").Run()
-        time.Sleep(5 * time.Second)
-
-        err = runVBoxCommand("storagectl", vmName, "--name", "IDE", "--add", "ide")
-        if err != nil {
-            return fmt.Errorf("failed to add IDE controller: %v", err)
-        }
+    if err != nil {
+        return fmt.Errorf("failed to check or create IDE controller: %v", err)
     }
 
     // **Step 4: Attach Guest Additions ISO**
@@ -189,10 +182,27 @@ func InstallGuestAdditions(vmName string) error {
     log.Println("🔄 Restarting VM before running Guest Additions installation...")
     startErr := exec.Command("VBoxManage", "startvm", vmName, "--type", "headless").Run()
     if startErr != nil {
+        log.Printf("❌ Failed to start VM: %v", startErr)
+        log.Println("📜 Fetching VM info for debugging...")
+        vmStateOutput, _ := exec.Command("VBoxManage", "showvminfo", vmName, "--details").CombinedOutput()
+        log.Println(string(vmStateOutput))
         return fmt.Errorf("failed to start VM after modifications: %v", startErr)
     }
 
-    // **Step 6: Run Guest Additions installer inside the VM**
+    // **Step 6: Ensure VM is actually running**
+    log.Println("🕵️ Checking if VM is running...")
+    for i := 0; i < 10; i++ {
+        stateOutput, err := exec.Command("VBoxManage", "showvminfo", vmName, "--machinereadable").Output()
+        if err == nil && strings.Contains(string(stateOutput), "VMState=\"running\"") {
+            log.Println("✅ VM is fully running, proceeding with installation.")
+            break
+        }
+        log.Println("⚠️ VM is not yet running, retrying in 5s...")
+        time.Sleep(5 * time.Second)
+    }
+
+    // **Step 7: Run Guest Additions installer inside the VM**
+    log.Println("🚀 Running Guest Additions installation inside VM...")
     err = runVBoxCommand("guestcontrol", vmName, "run",
         "--exe", "/bin/sh", "--username", "ubuntu", "--password", "ubuntu",
         "--", "/bin/sh", "-c", "sudo mount /dev/cdrom /mnt && sudo /mnt/VBoxLinuxAdditions.run")
