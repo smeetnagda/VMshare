@@ -1,0 +1,23 @@
+# github.com/shirou/gopsutil/disk
+iostat_darwin.c:28:2: warning: 'IOMasterPort' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/IOKit.framework/Headers/IOKitLib.h:143:1: note: 'IOMasterPort' has been explicitly marked deprecated here
+2025/03/05 06:44:42 Starting rental process...
+2025/03/05 06:44:42 Starting rental process...
+Total Memory: 17179869184 bytes, Available: 2775891968 bytes
+Free Disk Space: 343292047360 bytes
+2025/03/05 06:44:42 Attempting to create VM: myVM
+2025/03/05 06:44:42 VM with name myVM already exists. Deleting it before creating a new one.
+2025/03/05 06:44:42 Deleting VM: myVM
+2025/03/05 06:44:44 ✅ VM deleted successfully!
+2025/03/05 06:44:44 Creating base VM: myVM
+2025/03/05 06:44:44 Configuring graphics for VM...
+2025/03/05 06:44:44 ✅ Graphics configuration complete!
+2025/03/05 06:44:44 Configuring networking for VM...
+2025/03/05 06:44:44 ✅ Networking configured successfully!
+2025/03/05 06:44:44 Starting VM: myVM
+2025/03/05 06:44:49 ❌ Failed to start VM. Details:
+VBoxManage: error: The VM session was aborted
+VBoxManage: error: Details: code NS_ERROR_FAILURE (0x80004005), component SessionMachine, interface ISession
+Waiting for VM "myVM" to power on...
+2025/03/05 06:44:49 Error starting rental: failed to create VM: failed to start VM: failed to start VM: exit status 1
+exit status 1
