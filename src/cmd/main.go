@@ -1,3 +1,4 @@
+
 package main
 
 import (
@@ -6,34 +7,31 @@ import (
 	"os"
 	"strconv"
 	"time"
-	"vm-agent/internal/system"
+	"bytes" 
+
+	"vm-agent/internal/multipass"
 )
 
 func main() {
-	if len(os.Args) < 4 {
-		fmt.Println("Usage: main <VM_NAME> <SSH_KEY_PATH> <DURATION_IN_MINUTES>")
-		os.Exit(1)
-	}
+    if len(os.Args) != 4 {
+        log.Fatalf("Usage: %s <vmName> <sshPubKeyPath> <durationMinutes>", os.Args[0])
+    }
+    vmName := os.Args[1]
+    keyPath := os.Args[2]
+    mins, err := strconv.Atoi(os.Args[3])
+    if err != nil {
+        log.Fatalf("Invalid duration: %v", err)
+    }
 
-	vmName := os.Args[1]
-	sshKeyPath := os.Args[2]
-	durationMinutes, err := strconv.Atoi(os.Args[3])
-	if err != nil {
-		log.Fatalf("Invalid duration: %v", err)
-	}
+    // Load the public key
+    data, err := os.ReadFile(keyPath)
+    if err != nil {
+        log.Fatalf("Read SSH key: %v", err)
+    }
+    sshKey := string(bytes.TrimSpace(data))
 
-	// Read SSH Key
-	sshKey, err := os.ReadFile(sshKeyPath)
-	if err != nil {
-		log.Fatalf("Failed to read SSH key: %v", err)
-	}
-
-	duration := time.Duration(durationMinutes) * time.Minute
-
-	log.Println("Starting rental process...")
-	if err := system.StartRentalProcess(vmName, string(sshKey), duration); err != nil {
-		log.Fatalf("Error starting rental: %v", err)
-	}
-
-	log.Println("VM rental setup complete!")
+    fmt.Println("🔧 Starting rental process...")
+    if err := system.StartVM(vmName, sshKey, time.Duration(mins)*time.Minute); err != nil {
+        log.Fatalf("Error: %v", err)
+    }
 }
