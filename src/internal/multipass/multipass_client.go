@@ -1,13 +1,13 @@
-package system
+package multipass
 
 import (
-    "fmt"
-    "io/ioutil"
-    "os"
-    "os/exec"
-    "path/filepath"
-    "strings"
-    "time"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"time"
 )
 
 // StartVM launches a Multipass VM named vmName, injects sshKey,
@@ -34,13 +34,13 @@ users:
         return fmt.Errorf("write cloud-init: %v", err)
     }
 
-    // 3) Launch via CLI (no --format) – jammy is Ubuntu 22.04 ARM64 on M-series
+    // 3) Launch via CLI – jammy is Ubuntu 22.04 ARM64 on M-series
     launch := exec.Command(
         "multipass", "launch",
         "--name", vmName,
         "--cloud-init", yamlPath,
         "--cpus", "2",
-        "--mem", "2G",
+        "--memory", "2G",
         "jammy",
     )
     launch.Stdout = os.Stdout
@@ -49,7 +49,7 @@ users:
         return fmt.Errorf("launch failed: %v", err)
     }
 
-    // 4) Poll `multipass info` until we get an IPv4 line
+    // 4) Poll `multipass info` for IPv4
     var ip string
     for i := 0; i < 30; i++ {
         out, _ := exec.Command("multipass", "info", vmName).Output()
@@ -81,5 +81,14 @@ users:
         exec.Command("multipass", "delete", "--purge", vmName).Run()
     }()
 
+    return nil
+}
+
+// DeleteVM stops and purges the given VM immediately.
+func DeleteVM(vmName string) error {
+    cmd := exec.Command("multipass", "delete", "--purge", vmName)
+    if output, err := cmd.CombinedOutput(); err != nil {
+        return fmt.Errorf("delete failed: %v, output: %s", err, string(output))
+    }
     return nil
 }
