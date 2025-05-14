@@ -1,5 +1,4 @@
 module github.com/smeetnagda/vmshare
-replace github.com/smeetnagda/vmshare => ./
 
 go 1.24.0
 
@@ -14,3 +13,11 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 )
+
+replace github.com/smeetnagda/vmshare => ./
+
+replace github.com/smeetnagda/vmshare/internal/agent => ./internal/agent
+
+replace github.com/smeetnagda/vmshare/internal/multipass => ./internal/multipass
+
+replace github.com/smeetnagda/vmshare/internal/server => ./internal/server

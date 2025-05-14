@@ -5,19 +5,33 @@ import (
     "database/sql"
     "fmt"
     "time"
+    "strings"
 
     _ "github.com/mattn/go-sqlite3"
     "github.com/smeetnagda/vmshare/internal/multipass"
 )
-
+func execWithRetry(db *sql.DB, query string, args ...interface{}) error {
+    for i := 0; i < 5; i++ {
+        if _, err := db.Exec(query, args...); err != nil {
+            if strings.Contains(err.Error(), "database is locked") {
+                time.Sleep(200 * time.Millisecond)
+                continue
+            }
+            return err
+        }
+        return nil
+    }
+    return fmt.Errorf("exec retry failed: %s %v", query, args)
+}
 // Run continuously polls the rentals table, starts pending VMs, updates their IPs,
 // and tears down any VMs whose leases have expired.
 func Run(dbPath string, agentID int) error {
-    db, err := sql.Open("sqlite3", dbPath)
+    db, err := sql.Open("sqlite3",
+    fmt.Sprintf("file:%s?_journal_mode=WAL&_busy_timeout=5000", dbPath),
+    )
     if err != nil {
         return fmt.Errorf("open db: %v", err)
     }
-    defer db.Close()
 
     for {
         now := time.Now()
@@ -79,9 +93,12 @@ func Run(dbPath string, agentID int) error {
                     continue
                 }
                 if err := multipass.DeleteVM(vmName); err != nil {
-                    fmt.Printf("failed to delete VM %s: %v\n", vmName, err)
+                    // if multipass says “does not exist”, ignore it
+                    if !strings.Contains(err.Error(), "does not exist") {
+                        fmt.Printf("deleteVM %s error: %v\n", vmName, err)
+                    }
                 }
-                if _, err := db.Exec(
+                if  err := execWithRetry(db,
                     `DELETE FROM rentals WHERE vm_name = ?`,
                     vmName,
                 ); err != nil {

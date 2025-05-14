@@ -92,3 +92,26 @@ func DeleteVM(vmName string) error {
     }
     return nil
 }
+
+func FetchIP(vmName string) (string, error) {
+    // Try up to 30 times, 2s apart, to give the VM time to boot and get an IP.
+    for i := 0; i < 30; i++ {
+        out, err := exec.Command("multipass", "info", vmName).CombinedOutput()
+        if err != nil {
+            // if the command itself failed, return immediately
+            return "", fmt.Errorf("multipass info failed: %v, output: %s", err, string(out))
+        }
+        lines := strings.Split(string(out), "\n")
+        for _, line := range lines {
+            line = strings.TrimSpace(line)
+            if strings.HasPrefix(line, "IPv4:") {
+                parts := strings.Fields(line)
+                if len(parts) >= 2 {
+                    return parts[1], nil
+                }
+            }
+        }
+        time.Sleep(2 * time.Second)
+    }
+    return "", fmt.Errorf("could not determine IP for VM %q after waiting", vmName)
+}
