@@ -20,19 +20,16 @@ func StartVM(vmName, sshKey string, duration time.Duration) error {
         return fmt.Errorf("mkdir workspace: %v", err)
     }
 
-    // 2) Write cloud-init user-data
-    cloudInit := fmt.Sprintf(`#cloud-config
-ssh_authorized_keys:
-  - %s
-users:
-  - name: ubuntu
-    sudo: ALL=(ALL) NOPASSWD:ALL
-    shell: /bin/bash
-`, sshKey)
+    src := "internal/multipass/cloud-init-ssh-forward.yaml"
     yamlPath := filepath.Join(workDir, "cloud-init.yaml")
-    if err := ioutil.WriteFile(yamlPath, []byte(cloudInit), 0644); err != nil {
+    data, err := ioutil.ReadFile(src)
+    if err != nil {
+        return fmt.Errorf("read cloud-init template: %v", err)
+    }
+    if err := ioutil.WriteFile(yamlPath, data, 0644); err != nil {
         return fmt.Errorf("write cloud-init: %v", err)
     }
+
 
     // 3) Launch via CLI – jammy is Ubuntu 22.04 ARM64 on M-series
     launch := exec.Command(
@@ -91,4 +88,27 @@ func DeleteVM(vmName string) error {
         return fmt.Errorf("delete failed: %v, output: %s", err, string(output))
     }
     return nil
+}
+
+func FetchIP(vmName string) (string, error) {
+    // Try up to 30 times, 2s apart, to give the VM time to boot and get an IP.
+    for i := 0; i < 30; i++ {
+        out, err := exec.Command("multipass", "info", vmName).CombinedOutput()
+        if err != nil {
+            // if the command itself failed, return immediately
+            return "", fmt.Errorf("multipass info failed: %v, output: %s", err, string(out))
+        }
+        lines := strings.Split(string(out), "\n")
+        for _, line := range lines {
+            line = strings.TrimSpace(line)
+            if strings.HasPrefix(line, "IPv4:") {
+                parts := strings.Fields(line)
+                if len(parts) >= 2 {
+                    return parts[1], nil
+                }
+            }
+        }
+        time.Sleep(2 * time.Second)
+    }
+    return "", fmt.Errorf("could not determine IP for VM %q after waiting", vmName)
 }

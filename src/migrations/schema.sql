@@ -20,10 +20,13 @@ CREATE TABLE IF NOT EXISTS rentals (
   vm_name       TEXT    UNIQUE NOT NULL,
   user_id       INTEGER NOT NULL,
   agent_id      INTEGER NOT NULL,
+  ssh_key    TEXT    NOT NULL,
   ip_address    TEXT,
   expires_at    DATETIME NOT NULL,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY(user_id) REFERENCES users(id),
   FOREIGN KEY(agent_id) REFERENCES agents(id)
 );
+CREATE INDEX IF NOT EXISTS idx_rentals_expires_at
+  ON rentals(expires_at);
 

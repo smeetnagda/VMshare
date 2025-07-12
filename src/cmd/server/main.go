@@ -5,8 +5,10 @@ import (
     "net/http"
     "os"
     "time"
+    "path"
 
     "github.com/smeetnagda/vmshare/internal/server"
+    "github.com/gorilla/handlers"
 )
 
 func main() {
@@ -34,8 +36,23 @@ func main() {
 
     // 3) Register HTTP handlers
     mux := http.NewServeMux()
-    mux.HandleFunc("/rentals", server.HandleCreateRental(db))  // POST
-    mux.HandleFunc("/rentals/", server.HandleDeleteRental(db)) // DELETE
+    mux.HandleFunc("/rentals", server.RentalsHandler(db))
+    mux.HandleFunc("/rentals/", func(w http.ResponseWriter, r *http.Request) {
+        switch {
+        case r.Method == http.MethodDelete:
+            server.HandleDeleteRental(db)(w, r)
+        case r.Method == http.MethodPatch && path.Base(r.URL.Path) == "extend":
+            server.HandleExtendRental(db)(w, r)
+        default:
+            http.NotFound(w, r)
+        }
+    })
+    corsOptions := handlers.CORS(
+           handlers.AllowedOrigins([]string{"*"}),                           // allow all origins (change to your domain in prod)
+           handlers.AllowedMethods([]string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"}), // what methods are allowed
+           handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),             // which headers clients can send
+           )
+    handler := corsOptions(mux)
 
     // Optional health check
     mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -48,7 +65,7 @@ func main() {
         addr = ":8080"
     }
     log.Printf("🚀 Coordinator listening on %s …", addr)
-    if err := http.ListenAndServe(addr, mux); err != nil {
+    if err := http.ListenAndServe(addr, handlerWithCORS); err != nil {
         log.Fatalf("HTTP server error: %v", err)
     }
 }
