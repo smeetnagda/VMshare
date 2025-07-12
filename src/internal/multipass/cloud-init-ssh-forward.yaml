@@ -1,0 +1,14 @@
+# cloud-init-ssh-forward.yaml
+#cloud-config
+
+ssh_authorized_keys:
+  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC5ELiJLbuL1n/tt3m8rw4YdxJ5JVEm0mE5W5b0HmErIXZ9eqHggC+NTo0TOsmbpZg6YAUWUiOwcZ5Xh5a0sb4IE2+d0ehS/S6uRxxXDuVORYhCQPTEcwFaV6Ot5r4XYc1yFsyE11hT/bJiyTcdM1YQ3r/yThzCp6QEpcyx23SjuEKzSafnFGOpmumUStTrLnlGUj7nnhqApjw+3itxhm6cQmzRgopl8m/zb0jL4CGRRTl7vOs47khrVJRfBe4VAFrHdq5U6/+bd1r/QojoScaMl20A3T+q8nbCTSZYix20jQbqecAr6dEVYOQKAV0Z1vhqcysdHh1cAaJ6J1n0PM6kgLeNpDkYYhIXhMpe20Mp/gcA3pYfe3B9quNtC73dTKjdDfS/jsDhpt2qrbY8fxkS5MtcRUbCVdcmpfuBVo8FWMcQib8M0g9UMOvyxmlQ7kgLj1+6PzynCfekZkWCVHHgcKKU6EJADtI2oVwF/1FiyfSEK6l8ursomy0Q4nGha71PFPQ3mUbSOMZAqSPluc4Q9sVq81sksx3eMQCC9+Mu1tP1q1rsAqn3k+C1GmlpPSSJ4+YT+mcPPr9f5taqi16e/VBsC1My68fq9ELA9q3Fu9jik0vsAsZErMlf1chvTbX1lK6voVZLXsMeUsDW3x2/Qv0h+qZw1Mkayoc5aYCBCw== smeetnagda@Smeets-Air.lan user@host
+
+packages:
+  - iptables-persistent
+
+runcmd:
+  # Add a NAT rule so host-port 2222 → guest-port 22
+  - iptables -t nat -A PREROUTING -p tcp --dport 2222 -j REDIRECT --to-port 22
+  # Persist across reboots
+  - netfilter-persistent save

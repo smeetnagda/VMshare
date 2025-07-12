@@ -20,19 +20,16 @@ func StartVM(vmName, sshKey string, duration time.Duration) error {
         return fmt.Errorf("mkdir workspace: %v", err)
     }
 
-    // 2) Write cloud-init user-data
-    cloudInit := fmt.Sprintf(`#cloud-config
-ssh_authorized_keys:
-  - %s
-users:
-  - name: ubuntu
-    sudo: ALL=(ALL) NOPASSWD:ALL
-    shell: /bin/bash
-`, sshKey)
+    src := "internal/multipass/cloud-init-ssh-forward.yaml"
     yamlPath := filepath.Join(workDir, "cloud-init.yaml")
-    if err := ioutil.WriteFile(yamlPath, []byte(cloudInit), 0644); err != nil {
+    data, err := ioutil.ReadFile(src)
+    if err != nil {
+        return fmt.Errorf("read cloud-init template: %v", err)
+    }
+    if err := ioutil.WriteFile(yamlPath, data, 0644); err != nil {
         return fmt.Errorf("write cloud-init: %v", err)
     }
+
 
     // 3) Launch via CLI – jammy is Ubuntu 22.04 ARM64 on M-series
     launch := exec.Command(
