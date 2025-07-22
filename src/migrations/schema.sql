@@ -1,8 +1,10 @@
--- users table
+
 CREATE TABLE IF NOT EXISTS users (
-  id             INTEGER PRIMARY KEY AUTOINCREMENT,
-  name           TEXT    UNIQUE NOT NULL,
-  hashed_password TEXT   NOT NULL
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  email     TEXT    UNIQUE NOT NULL,
+  password  TEXT    NOT NULL,          -- hashed
+  ssh_key   TEXT    NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- agents table
