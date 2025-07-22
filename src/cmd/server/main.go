@@ -1,18 +1,14 @@
 package main
-
 import (
     "log"
     "net/http"
     "os"
-    "time"
     "path"
-
-    "github.com/smeetnagda/vmshare/internal/server"
     "github.com/gorilla/handlers"
+    "github.com/smeetnagda/vmshare/internal/server"
 )
 
 func main() {
-    // 1) Initialize (and migrate) the SQLite database
     dbPath := "data/vmrental.db"
     db, err := server.NewDB(dbPath)
     if err != nil {
@@ -20,21 +16,8 @@ func main() {
     }
     defer db.Close()
     log.Printf("✅ Database ready: %s", dbPath)
+    server.StartExpiredRentalCleanup(db)
 
-    // 2) Periodically clean up expired rentals
-    go func() {
-        ticker := time.NewTicker(1 * time.Minute)
-        for range ticker.C {
-            n, err := server.DeleteExpiredRentals(db)
-            if err != nil {
-                log.Printf("Error deleting expired rentals: %v", err)
-            } else if n > 0 {
-                log.Printf("Cleaned up %d expired rentals", n)
-            }
-        }
-    }()
-
-    // 3) Register HTTP handlers
     mux := http.NewServeMux()
     mux.HandleFunc("/rentals", server.RentalsHandler(db))
     mux.HandleFunc("/rentals/", func(w http.ResponseWriter, r *http.Request) {
@@ -47,26 +30,27 @@ func main() {
             http.NotFound(w, r)
         }
     })
-    corsOptions := handlers.CORS(
-           handlers.AllowedOrigins([]string{"*"}),                           // allow all origins (change to your domain in prod)
-           handlers.AllowedMethods([]string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"}), // what methods are allowed
-           handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),             // which headers clients can send
-           )
-    handler := corsOptions(mux)
-
-    // Optional health check
+    mux.HandleFunc("/signup", server.HandleSignup(db))
+    mux.HandleFunc("/login",  server.HandleLogin(db))
+    mux.HandleFunc("/me",     server.HandleGetCurrentUser(db))
     mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
         w.Write([]byte("OK"))
     })
+    mux.HandleFunc("/logout", server.LogoutHandler())
+    // Configure CORS:
+    corsHandler := handlers.CORS(
+        handlers.AllowedOrigins([]string{"http://localhost:3000"}),         // your React app
+        handlers.AllowedMethods([]string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"}),
+        handlers.AllowedHeaders([]string{"Content-Type", "Authorization","Cookie"}),
+        handlers.AllowCredentials(),
+    )(mux)
 
-    // 4) Start HTTP server
     addr := os.Getenv("HTTP_ADDR")
     if addr == "" {
         addr = ":8080"
     }
     log.Printf("🚀 Coordinator listening on %s …", addr)
-    if err := http.ListenAndServe(addr, handlerWithCORS); err != nil {
+    if err := http.ListenAndServe(addr, corsHandler); err != nil {
         log.Fatalf("HTTP server error: %v", err)
     }
 }
-

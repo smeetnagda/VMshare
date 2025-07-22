@@ -18,14 +18,14 @@ type User struct {
 
 // CreateUser inserts a new user and returns its ID.
 func CreateUser(db *sql.DB, email, hashedPassword, sshKey string) (int64, error) {
-	res, err := db.Exec(
-		`INSERT INTO users (email, password, ssh_key) VALUES (?, ?, ?)`,
-		email, hashedPassword, sshKey,
-	)
-	if err != nil {
-		return 0, err
-	}
-	return res.LastInsertId()
+    res, err := db.Exec(
+      `INSERT INTO users (email, password, ssh_key) VALUES (?, ?, ?)`,
+      email, hashedPassword, sshKey,
+    )
+    if err != nil {
+      return 0, err
+    }
+    return res.LastInsertId()
 }
 
 // GetUserByEmail looks up a user by email. Returns nil, nil if not found.
