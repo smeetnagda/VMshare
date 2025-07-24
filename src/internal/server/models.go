@@ -92,6 +92,9 @@ type Rental struct {
 	IPAddress sql.NullString `json:"ip_address"`
 	ExpiresAt time.Time      `json:"expires_at"`
 	CreatedAt time.Time      `json:"created_at"`
+    CPUs      int            `json:"cpus"`
+    Memory    int            `json:"memory"`
+    Disk      int            `json:"disk"`
 }
 
 // CreateRental reserves a VM slot and returns the new row ID.
