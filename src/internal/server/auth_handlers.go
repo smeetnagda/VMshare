@@ -109,8 +109,6 @@ func HandleLogin(db *sql.DB) http.HandlerFunc {
             return
         }
         defer r.Body.Close()
-        log.Printf("[LOGIN] payload: email=%q, password=%q\n", req.Email, req.Password) // 4 (you may want to omit logging the raw password in prod)
-
         var id int
         var hash string
         err := db.QueryRow(
